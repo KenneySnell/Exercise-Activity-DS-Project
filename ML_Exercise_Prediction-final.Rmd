@@ -1,0 +1,177 @@
+---
+title: "ML_Excerise_Prediction"
+author: "Kenney Snell"
+date: "December 10, 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+##Introduction
+Devices such as Jawbone Up, Nike FuelBand, and Fitbit make it easy to collect a large amount of data about personal exercise activity relatively inexpensively.   One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it
+
+##Project Goal
+The goal of this project is to predict the manner in which they did the exercise. This is the "classe" variable in the training set. Choose both the machine learning method and the variables to predict the variable "classe".
+
+
+##Describe the data
+Use this data for training and cross validaiton.
+
+The training data for this project are available here: 
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv
+
+Use this data for the final prediction.
+
+The test data are available here:
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv
+
+
+##Processing (Get data and set up)  
+
+```{r Get_data_pre, echo=TRUE}
+# Read Training data
+library(caret)
+library(ggplot2)
+library(forecast)
+# Remove that has any divide by zero.
+# set all fact data to integer or number.
+train_in = read.csv("C://Users//app1kms//Documents//Training//2017//DataScience_Downloads//ML//pml-training.csv", stringsAsFactors = FALSE, na.strings = c("#DIV/0!"))
+#str(train_in)
+# Read Testing data
+testing = read.csv("C://Users//app1kms//Documents//Training//2017//DataScience_Downloads//ML//pml-testing.csv")
+# str(testing)
+
+set.seed(1765)
+
+# Sample 6000 rows out of original training data
+# set to 1000 for now
+train_in.sample <- sample(nrow(train_in), 6000)
+train_in.subset <- train_in[train_in.sample, ]
+
+# Remove columns with 2/3 of the data missing (NA) and columnns that are character data 
+train_in.drop <- train_in.subset[, colSums(is.na(train_in.subset)) < 107]  #Columns with 2/3 (107) NA values
+train_in.drop_chr <- train_in.drop[, !sapply(train_in.drop, is.character)]  #Columns of 'character'' type
+# str(train_in.drop_chr)
+
+training_data <- train_in.drop_chr[, 4:56]  #Remove other irrelevant columns through manual inspection
+# remoe first 4 colums (names, etc.)
+
+training_data$classe <- as.factor(train_in.subset$classe)  #Re-insert classe column, convert to factor
+
+
+# createDataPartition: Subset 30% of training data for cross-validation
+
+# Create a building data set and validation set
+trainIndex <- createDataPartition(y = training_data$classe, p = 0.7, list = FALSE)
+train_build <- training_data[trainIndex, ]
+#str(train_build)
+train_validation <- training_data[-trainIndex, ]
+str(train_validation)
+####### Data to be used
+dim(train_build)
+dim(testing)
+dim(train_validation)
+```
+
+
+##Model choice and method used how you build the model 
+Use the caret package and set the method to Random forest.  This will help flush out the many variables to make a better prediction.
+
+
+```{r modFit,dependson="classe",echo=TRUE}
+library(caret)
+library(ggplot2)
+library(forecast)
+modelfit <- train(classe ~.,method="rf",
+              data=train_build, 
+             trControl = trainControl(method="cv"),number=3,trace = TRUE)
+modelfit$finalModel
+
+```
+
+
+
+
+##Expected out of sample error
+
+From the output above the error rate is 1.29%.  This used the training (build) set of data.  This process used over 4000 cases.  I am hoping that the model is not performing overfitting.
+
+
+
+##Cross validation
+I used almost 1800 cases for the vlaidatations training (train_validation).
+
+You can see the results from the confusion matrix.  The Sensitivity and the Specificity are near 1.0
+
+
+
+```{r CrossValidate,dependson="classe",echo=TRUE}
+library(caret)
+library(ggplot2)
+library(forecast)
+
+predictions <- predict(modelfit, newdata = train_validation)
+
+confusionMatrix(predictions, train_validation$classe)
+
+```
+## Estimating out-of-sample error
+
+The Accuracy (see above) is 0.9878.  Subtracting this from 1 we have 1.0122 error rate and the estimate above on the sample error was 1.29%.  The model appears to be on track.
+
+
+##Use Model to to predict 20 different test cases. 
+
+```{r Predic_Class,echo=TRUE}
+
+
+predictions.test <- predict(modelfit, newdata = testing)
+data.frame(Predictions = predictions.test)
+```
+
+
+
+
+## Including Plots
+
+
+```{r Plot_featureplot_density, echo=FALSE}
+featurePlot(x=c(train_validation[,7:11],train_validation[,19:23],train_validation[,49:53]) ,
+            y = train_validation$classe,
+            plot="density",
+            scales=list(x=list(relation="free"),
+                        y=list(relation="free")),
+            adjust=1.5,
+            pch = "|",
+            layout=c(5,3),
+             auto.key = list(columns=3)
+            )
+
+```
+
+
+
+```{r Plot_featureplot, echo=FALSE}
+featurePlot(x=train_validation[,1:5],
+            y = train_validation$classe,
+            plot="pairs")
+
+```
+
+```{r Plot_accuracy, echo=FALSE}
+plot(modelfit)
+
+```
+
+```{r Plot_validate, echo=FALSE}
+qplot(total_accel_belt,classe,colour=num_window,data=train_validation)
+
+```
+
+
+```{r Plot_final, echo=FALSE}
+qplot(classe,predictions,data = train_validation,color=predictions) 
+
+```
+
