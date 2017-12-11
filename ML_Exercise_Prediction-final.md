@@ -319,16 +319,21 @@ data.frame(Predictions = predictions.test)
 ## Including Plots
 
 
-![](ML_Exercise_Prediction-final_files/figure-html/Plot_featureplot_density-1.png)<!-- -->
+![](./figure/Plot_featureplot_density-1.png)<!-- -->
 
 
 
-![](ML_Exercise_Prediction-final_files/figure-html/Plot_featureplot-1.png)<!-- -->
+![](./figure/Plot_featureplot-1.png)<!-- -->
 
-![](ML_Exercise_Prediction-final_files/figure-html/Plot_accuracy-1.png)<!-- -->
+![](./figure/Plot_accuracy-1.png)<!-- -->
 
-![](ML_Exercise_Prediction-final_files/figure-html/Plot_validate-1.png)<!-- -->
+![](./figure/Plot_validate-1.png)<!-- -->
 
 
-![](ML_Exercise_Prediction-final_files/figure-html/Plot_final-1.png)<!-- -->
+
+```r
+qplot(classe,predictions,data = train_validation,color=predictions) 
+```
+
+![](./figure/Plot_final-1.png)<!-- -->
 
